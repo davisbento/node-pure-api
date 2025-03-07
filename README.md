@@ -62,7 +62,6 @@ npm install
 2. Set up your environment variables:
 
 ```bash
-cp .env.example .env
 # Edit .env with your configuration
 ```
 
@@ -120,14 +119,4 @@ This project implements a clean architecture pattern:
 3. **Containerization**: Docker ensures consistent development and production environments
 4. **Caching Strategy**: Redis is used for caching frequently accessed data
 
-## License 📝
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Contributing 🤝
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
 ---
-
-Made with ❤️ by [Your Name]
