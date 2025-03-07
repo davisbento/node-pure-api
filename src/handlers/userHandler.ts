@@ -2,6 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { UserService } from '../services/userService';
 import { LoginDto, SignupDto } from '../types/dto';
 import { parseJsonBody } from '../utils/bodyParser';
+import { extractToken } from '../utils/extractToken';
 import { verifyToken } from '../utils/jwt';
 
 const userService = new UserService();
@@ -44,7 +45,7 @@ export async function handleLogin(req: IncomingMessage, res: ServerResponse): Pr
 
 export async function handleGetMe(req: IncomingMessage, res: ServerResponse): Promise<void> {
 	try {
-		const token = req.headers.authorization?.split(' ')[1];
+		const token = extractToken(req);
 
 		if (!token) {
 			throw new Error('Unauthorized');
