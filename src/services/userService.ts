@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import pool from '../infra/database';
 import { getCache, setCache } from '../infra/redis';
+import { UserModel } from '../models/userModel';
 import type { LoginDto, LoginResponse, SignupDto, UserProfileDto, UserResponse } from '../types/dto';
 import { generateToken } from '../utils/jwt';
 
@@ -11,31 +12,28 @@ export class UserService {
 	async signup(userData: SignupDto): Promise<UserResponse> {
 		const { username, email, password } = userData;
 
-		// Check if user already exists
-		const existingUser = await pool.query('SELECT * FROM users WHERE username = $1 OR email = $2', [username, email]);
+		const userModel = new UserModel();
 
-		if (existingUser.rows.length > 0) {
+		// Check if user already exists
+		const existingUser = await userModel.hasAnyUserWithEmailOrUsername(email, username);
+
+		if (existingUser) {
 			throw new Error('User already exists');
 		}
 
-		// Hash the password
-		const hashedPassword = await bcrypt.hash(password, 10);
+		const newUser = await userModel.persistUser(userData);
 
-		// Insert user into database
-		const newUser = await pool.query('INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *', [
-			username,
-			email,
-			hashedPassword
-		]);
-		const user = newUser.rows[0];
+		if (!newUser) {
+			throw new Error('Failed to create user');
+		}
 
 		return {
 			success: true,
 			message: 'User registered successfully',
 			user: {
-				id: user.id,
-				username: user.username,
-				email: user.email
+				id: newUser.id,
+				username: newUser.username,
+				email: newUser.email
 			}
 		};
 	}

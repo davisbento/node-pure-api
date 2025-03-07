@@ -13,8 +13,8 @@ POST {{baseUrl}}/users/signup
 Content-Type: application/json
 
 {
-  "username": "testuser",
-  "email": "test@example.com",
+  "username": "test3user",
+  "email": "test3@example.com",
   "password": "SecurePassword123!"
 }
 
