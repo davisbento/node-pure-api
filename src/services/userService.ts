@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import pool from '../infra/database';
 import { LoginDto, LoginResponse, SignupDto, UserProfileDto, UserResponse } from '../types/dto';
+import { generateToken } from '../utils/jwt';
 
 export class UserService {
 	/**
@@ -43,10 +43,10 @@ export class UserService {
 	 * Authenticate a user
 	 */
 	async login(credentials: LoginDto): Promise<LoginResponse> {
-		const { username, password } = credentials;
+		const { email, password } = credentials;
 
 		// Check if user exists
-		const user = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+		const user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
 
 		if (user.rows.length === 0) {
 			throw new Error('Invalid credentials');
@@ -60,7 +60,7 @@ export class UserService {
 		}
 
 		// Generate JWT token
-		const token = jwt.sign({ userId: user.rows[0].id }, process.env.JWT_SECRET || 'secret');
+		const token = generateToken(user.rows[0].id);
 
 		return {
 			success: true,

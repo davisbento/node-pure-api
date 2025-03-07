@@ -1,0 +1,36 @@
+@baseUrl = http://localhost:3000
+@authToken = {{login.response.body.token}}
+
+### Health Check
+GET {{baseUrl}}/
+Content-Type: application/json
+
+### USER ENDPOINTS ###
+
+### Register a new user
+# @name register
+POST {{baseUrl}}/users/signup
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "SecurePassword123!"
+}
+
+### Login
+# @name login
+POST {{baseUrl}}/users/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "SecurePassword123!"
+}
+
+
+### Get current user profile
+GET {{baseUrl}}/users/me
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
