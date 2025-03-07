@@ -1,4 +1,6 @@
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 import { Pool } from 'pg';
 
 // Load environment variables
@@ -13,16 +15,68 @@ const pool = new Pool({
 	database: process.env.POSTGRES_DB
 });
 
+// Create a file-based flag to track initialization across restarts
+export const DB_INIT_FLAG_PATH = path.join(__dirname, '../../.db_initialized');
+
+// Check if the database has been initialized in this server session
+const isDbInitialized = () => {
+	try {
+		return fs.existsSync(DB_INIT_FLAG_PATH);
+	} catch (err) {
+		return false;
+	}
+};
+
+// Mark the database as initialized
+const markDbInitialized = () => {
+	try {
+		fs.writeFileSync(DB_INIT_FLAG_PATH, new Date().toISOString());
+	} catch (err) {
+		console.warn('Could not write db initialization flag file:', (err as Error).message);
+	}
+};
+
 // Test the connection
-export const testConnection = () => {
-	pool.connect((err, client, release) => {
-		if (err) {
-			console.error('Error connecting to PostgreSQL database:', err.message);
-			return;
-		}
+export const testConnection = async (): Promise<boolean> => {
+	if (isDbInitialized()) {
+		console.log('Database connection already established.');
+		return true;
+	}
+
+	try {
+		const client = await pool.connect();
 		console.log('Connected to PostgreSQL database successfully');
-		release();
-	});
+		client.release();
+		return true;
+	} catch (err) {
+		console.error('Error connecting to PostgreSQL database:', (err as Error).message);
+		return false;
+	}
+};
+
+// Create users table if it doesn't exist
+export const createUsersTable = async (): Promise<void> => {
+	if (isDbInitialized()) {
+		console.log('Database already initialized, skipping table creation.');
+		return;
+	}
+
+	try {
+		const client = await pool.connect();
+		await client.query(`
+			CREATE TABLE IF NOT EXISTS users (
+				id SERIAL PRIMARY KEY,
+				name VARCHAR(100) NOT NULL,
+				username VARCHAR(50) UNIQUE NOT NULL
+			)
+		`);
+		console.log('Users table created or already exists');
+		client.release();
+		markDbInitialized();
+	} catch (err) {
+		console.error('Error creating users table:', (err as Error).message);
+		throw err;
+	}
 };
 
 export default pool;

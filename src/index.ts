@@ -1,9 +1,26 @@
+import fs from 'fs';
 import * as http from 'http';
 import { URL } from 'url';
 import { handleRoot } from './handlers/rootHandler';
 import { handleGetMe, handleLogin, handleSignup } from './handlers/userHandler';
+import pool, { createUsersTable, DB_INIT_FLAG_PATH, testConnection } from './infra/database';
 
 const PORT = process.env.PORT || 3000;
+
+// Initialize database
+const initializeDatabase = async () => {
+	const isConnected = await testConnection();
+	if (isConnected) {
+		await createUsersTable();
+	} else {
+		console.error('Failed to initialize database. Server may not function correctly.');
+	}
+};
+
+// Run database initialization once
+initializeDatabase().catch((err) => {
+	console.error('Database initialization failed:', err);
+});
 
 // Create HTTP server
 const server = http.createServer(async (req, res) => {
@@ -53,4 +70,10 @@ const server = http.createServer(async (req, res) => {
 // Start the server
 server.listen(PORT, () => {
 	console.log(`Server running at http://localhost:${PORT}/`);
+
+	// on server down/sigint/sigkill close the database connection and delete the db_initialized file
+	process.on('SIGINT', async () => {
+		await pool.end();
+		fs.unlinkSync(DB_INIT_FLAG_PATH);
+	});
 });
