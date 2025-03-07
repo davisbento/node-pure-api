@@ -1,6 +1,7 @@
-import { IncomingMessage, ServerResponse } from 'http';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { LoginDto, SignupDto } from '../types/dto';
+
 import { UserService } from '../services/userService';
-import { LoginDto, SignupDto } from '../types/dto';
 import { parseJsonBody } from '../utils/bodyParser';
 import { extractToken } from '../utils/extractToken';
 import { verifyToken } from '../utils/jwt';

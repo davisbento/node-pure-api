@@ -87,10 +87,11 @@ npm run dev
 .
 ├── src/
 │   ├── config/          # Configuration files
-│   ├── controllers/     # Request handlers
-│   ├── db/              # Database connection and models
-│   ├── middleware/      # Custom middleware
-│   ├── routes/          # Route definitions
+│   ├── handlers/        # Request handlers
+│   ├── infra/           # Infrastructure files
+│   ├── infra/db/        # Database connection and models
+│   ├── infra/redis/     # Redis connection and models
+│   ├── types/           # TypeScript types
 │   ├── services/        # Business logic
 │   ├── utils/           # Helper functions
 │   └── index.ts         # Entry point

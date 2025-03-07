@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import pool from '../infra/database';
-import { LoginDto, LoginResponse, SignupDto, UserProfileDto, UserResponse } from '../types/dto';
+import { getCache, setCache } from '../infra/redis';
+import type { LoginDto, LoginResponse, SignupDto, UserProfileDto, UserResponse } from '../types/dto';
 import { generateToken } from '../utils/jwt';
 
 export class UserService {
@@ -85,10 +86,22 @@ export class UserService {
 			throw new Error('User not found');
 		}
 
-		return {
+		const cacheKey = `user:${userId}`;
+
+		const cachedUser = await getCache(cacheKey);
+
+		if (cachedUser) {
+			return JSON.parse(cachedUser);
+		}
+
+		const response: UserProfileDto = {
 			id: user.rows[0].id,
 			username: user.rows[0].username,
 			email: user.rows[0].email
 		};
+
+		await setCache(cacheKey, JSON.stringify(response), 60);
+
+		return response;
 	}
 }

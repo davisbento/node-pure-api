@@ -1,6 +1,6 @@
-import fs from 'fs';
-import * as http from 'http';
-import { URL } from 'url';
+import fs from 'node:fs';
+import * as http from 'node:http';
+import { URL } from 'node:url';
 import { handleRoot } from './handlers/rootHandler';
 import { handleGetMe, handleLogin, handleSignup } from './handlers/userHandler';
 import pool, { createUsersTable, DB_INIT_FLAG_PATH, testConnection } from './infra/database';
