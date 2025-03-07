@@ -43,10 +43,13 @@ export async function handleLogin(req: IncomingMessage, res: ServerResponse): Pr
 
 export async function handleGetMe(req: IncomingMessage, res: ServerResponse): Promise<void> {
 	try {
-		// In a real app, you would extract user ID from JWT token
-		// For now, we're using a hardcoded ID
-		const userId = 1;
-		const user = await userService.getCurrentUser(userId);
+		const userId = req.headers.authorization?.split(' ')[1];
+
+		if (!userId) {
+			throw new Error('Unauthorized');
+		}
+
+		const user = await userService.getCurrentUser(Number(userId));
 
 		res.writeHead(200);
 		res.end(JSON.stringify(user));

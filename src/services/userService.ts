@@ -1,30 +1,41 @@
-import { LoginDto, LoginResponse, SignupDto, UserDto, UserProfileDto, UserResponse } from '../types/dto';
-
-// Mock data - would be a database in a real app
-const users: UserDto[] = [
-	{ id: 1, username: 'user1', email: 'user1@example.com' },
-	{ id: 2, username: 'user2', email: 'user2@example.com' }
-];
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import pool from '../infra/database';
+import { LoginDto, LoginResponse, SignupDto, UserProfileDto, UserResponse } from '../types/dto';
 
 export class UserService {
 	/**
 	 * Register a new user
 	 */
 	async signup(userData: SignupDto): Promise<UserResponse> {
-		// Mock implementation - would validate and store in a database
-		const newUser: UserDto = {
-			id: users.length + 1,
-			username: userData.username || 'new_user',
-			email: userData.email || 'new_user@example.com'
-		};
+		const { username, email, password } = userData;
 
-		// In a real app, we would add the user to the database
-		// users.push(newUser);
+		// Check if user already exists
+		const existingUser = await pool.query('SELECT * FROM users WHERE username = $1 OR email = $2', [username, email]);
+
+		if (existingUser.rows.length > 0) {
+			throw new Error('User already exists');
+		}
+
+		// Hash the password
+		const hashedPassword = await bcrypt.hash(password, 10);
+
+		// Insert user into database
+		const newUser = await pool.query('INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *', [
+			username,
+			email,
+			hashedPassword
+		]);
+		const user = newUser.rows[0];
 
 		return {
 			success: true,
 			message: 'User registered successfully',
-			user: newUser
+			user: {
+				id: user.id,
+				username: user.username,
+				email: user.email
+			}
 		};
 	}
 
@@ -32,17 +43,33 @@ export class UserService {
 	 * Authenticate a user
 	 */
 	async login(credentials: LoginDto): Promise<LoginResponse> {
-		// Mock authentication - would verify against database in a real app
-		// In a real app, we would check if the user exists and verify the password
+		const { username, password } = credentials;
+
+		// Check if user exists
+		const user = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+
+		if (user.rows.length === 0) {
+			throw new Error('Invalid credentials');
+		}
+
+		// Check password
+		const isPasswordValid = await bcrypt.compare(password, user.rows[0].password);
+
+		if (!isPasswordValid) {
+			throw new Error('Invalid credentials');
+		}
+
+		// Generate JWT token
+		const token = jwt.sign({ userId: user.rows[0].id }, process.env.JWT_SECRET || 'secret');
 
 		return {
 			success: true,
 			message: 'Login successful',
-			token: 'mock-jwt-token-xyz123',
+			token,
 			user: {
-				id: 1,
-				username: 'user1',
-				email: 'user1@example.com'
+				id: user.rows[0].id,
+				username: user.rows[0].username,
+				email: user.rows[0].email
 			}
 		};
 	}
@@ -51,15 +78,17 @@ export class UserService {
 	 * Get current user profile
 	 */
 	async getCurrentUser(userId: number): Promise<UserProfileDto> {
-		// Mock implementation - would fetch from database based on token
+		// Fetch user from database
+		const user = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+
+		if (user.rows.length === 0) {
+			throw new Error('User not found');
+		}
+
 		return {
-			id: 1,
-			username: 'user1',
-			email: 'user1@example.com',
-			profile: {
-				fullName: 'User One',
-				joined: '2023-01-15'
-			}
+			id: user.rows[0].id,
+			username: user.rows[0].username,
+			email: user.rows[0].email
 		};
 	}
 }

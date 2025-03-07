@@ -16,12 +16,7 @@ export interface UserDto {
 	email: string;
 }
 
-export interface UserProfileDto extends UserDto {
-	profile: {
-		fullName: string;
-		joined: string;
-	};
-}
+export interface UserProfileDto extends UserDto {}
 
 // API response types
 export interface ApiResponse {
