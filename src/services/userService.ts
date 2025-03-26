@@ -1,7 +1,8 @@
-import bcrypt from 'bcryptjs';
+import type { LoginDto, LoginResponse, SignupDto, UserProfileDto, UserResponse } from '../types/dto';
+
 import { getCache, setCache } from '../infra/redis';
 import { UserModel } from '../models/userModel';
-import type { LoginDto, LoginResponse, SignupDto, UserProfileDto, UserResponse } from '../types/dto';
+import { comparePassword } from '../utils/hashPassword';
 import { generateToken } from '../utils/jwt';
 
 export class UserService {
@@ -58,7 +59,7 @@ export class UserService {
 		}
 
 		// Check password
-		const isPasswordValid = await bcrypt.compare(password, user.password);
+		const isPasswordValid = await comparePassword(password, user.password);
 
 		if (!isPasswordValid) {
 			throw new Error('Invalid credentials');

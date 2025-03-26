@@ -1,10 +1,9 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { LoginDto, SignupDto } from '../types/dto';
 
+import { validateUserTokenAndReturnUserId } from '../services/tokenService';
 import { UserService } from '../services/userService';
 import { parseJsonBody } from '../utils/bodyParser';
-import { extractToken } from '../utils/extractToken';
-import { verifyToken } from '../utils/jwt';
 
 const userService = new UserService();
 
@@ -46,20 +45,9 @@ export async function handleLogin(req: IncomingMessage, res: ServerResponse): Pr
 
 export async function handleGetMe(req: IncomingMessage, res: ServerResponse): Promise<void> {
 	try {
-		const token = extractToken(req);
+		const userId = validateUserTokenAndReturnUserId(req);
 
-		if (!token) {
-			throw new Error('Unauthorized');
-		}
-
-		const decodedToken = verifyToken(token);
-
-		if (!decodedToken?.sub) {
-			throw new Error('Unauthorized');
-		}
-
-		const userId = decodedToken.sub;
-		const user = await userService.getCurrentUser(Number(userId));
+		const user = await userService.getCurrentUser(userId);
 
 		res.writeHead(200);
 		res.end(JSON.stringify(user));
