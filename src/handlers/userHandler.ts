@@ -5,6 +5,7 @@ import { UnauthorizedException } from '../exceptions/unauthorizedException';
 import { validateUserTokenAndReturnUserId } from '../services/tokenService';
 import { UserService } from '../services/userService';
 import { parseJsonBody } from '../utils/bodyParser';
+import { formatError } from '../utils/formartError';
 import { sendResponse } from '../utils/server';
 
 const userService = new UserService();
@@ -40,14 +41,15 @@ export async function handleGetMe(req: IncomingMessage, res: ServerResponse): Pr
 	try {
 		const userId = validateUserTokenAndReturnUserId(req);
 
+		if (!userId) {
+			throw new UnauthorizedException();
+		}
+
 		const user = await userService.getCurrentUser(userId);
 
 		sendResponse(res, 200, user);
 	} catch (error) {
-		if (error instanceof UnauthorizedException) {
-			sendResponse(res, 401, { message: error.message });
-		} else {
-			sendResponse(res, 400, { message: 'Error processing request' });
-		}
+		const { message, statusCode } = formatError(error as Error);
+		sendResponse(res, statusCode, { message });
 	}
 }
