@@ -1,27 +1,33 @@
 import bcrypt from 'bcryptjs';
-import pool from '../infra/database';
 import { getCache, setCache } from '../infra/redis';
 import { UserModel } from '../models/userModel';
 import type { LoginDto, LoginResponse, SignupDto, UserProfileDto, UserResponse } from '../types/dto';
 import { generateToken } from '../utils/jwt';
 
 export class UserService {
+	private userModel: UserModel;
+
+	constructor() {
+		this.userModel = new UserModel();
+	}
+
 	/**
-	 * Register a new user
-	 */
+	 * Register a new user */
 	async signup(userData: SignupDto): Promise<UserResponse> {
 		const { username, email, password } = userData;
 
-		const userModel = new UserModel();
-
 		// Check if user already exists
-		const existingUser = await userModel.hasAnyUserWithEmailOrUsername(email, username);
+		const existingUser = await this.userModel.hasAnyUserWithEmailOrUsername(email, username);
 
 		if (existingUser) {
 			throw new Error('User already exists');
 		}
 
-		const newUser = await userModel.persistUser(userData);
+		const newUser = await this.userModel.persistUser({
+			username,
+			email,
+			password
+		});
 
 		if (!newUser) {
 			throw new Error('Failed to create user');
@@ -45,30 +51,30 @@ export class UserService {
 		const { email, password } = credentials;
 
 		// Check if user exists
-		const user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+		const user = await this.userModel.getUserByEmail(email);
 
-		if (user.rows.length === 0) {
+		if (!user) {
 			throw new Error('Invalid credentials');
 		}
 
 		// Check password
-		const isPasswordValid = await bcrypt.compare(password, user.rows[0].password);
+		const isPasswordValid = await bcrypt.compare(password, user.password);
 
 		if (!isPasswordValid) {
 			throw new Error('Invalid credentials');
 		}
 
 		// Generate JWT token
-		const token = generateToken(user.rows[0].id);
+		const token = generateToken(user.id);
 
 		return {
 			success: true,
 			message: 'Login successful',
 			token,
 			user: {
-				id: user.rows[0].id,
-				username: user.rows[0].username,
-				email: user.rows[0].email
+				id: user.id,
+				username: user.username,
+				email: user.email
 			}
 		};
 	}
@@ -77,25 +83,24 @@ export class UserService {
 	 * Get current user profile
 	 */
 	async getCurrentUser(userId: number): Promise<UserProfileDto> {
-		// Fetch user from database
-		const user = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
-
-		if (user.rows.length === 0) {
-			throw new Error('User not found');
-		}
-
 		const cacheKey = `user:${userId}`;
-
 		const cachedUser = await getCache(cacheKey);
 
 		if (cachedUser) {
 			return JSON.parse(cachedUser);
 		}
 
+		// Fetch user from database
+		const user = await this.userModel.getUserById(userId);
+
+		if (!user) {
+			throw new Error('User not found');
+		}
+
 		const response: UserProfileDto = {
-			id: user.rows[0].id,
-			username: user.rows[0].username,
-			email: user.rows[0].email
+			id: user.id,
+			username: user.username,
+			email: user.email
 		};
 
 		await setCache(cacheKey, JSON.stringify(response), 60);

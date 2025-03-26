@@ -1,5 +1,5 @@
 import pool from '../infra/database';
-import type { SignupDto } from '../types/dto';
+import type { SignupDto, UserDto } from '../types/dto';
 import { hashPassword } from '../utils/hashPassword';
 
 export class UserModel {
@@ -12,11 +12,11 @@ export class UserModel {
 		};
 	}
 
-	public async persistUser(user: SignupDto) {
+	public async persistUser(user: SignupDto): Promise<UserDto | null> {
 		try {
 			const preparedUser = await this.prepareUserToCreate(user);
 
-			const newUserCreatedRows = await pool.query(
+			const newUserCreatedRows = await pool.query<UserDto>(
 				'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *',
 				[preparedUser.username, preparedUser.email, preparedUser.password]
 			);
@@ -34,6 +34,12 @@ export class UserModel {
 		const user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
 
 		return user.rows[0];
+	}
+
+	public async getUserById(id: number): Promise<UserDto | null> {
+		const user = await pool.query<UserDto>('SELECT * FROM users WHERE id = $1', [id]);
+
+		return user.rows[0] ?? null;
 	}
 
 	public async hasAnyUserWithEmailOrUsername(email: string, username: string): Promise<boolean> {
