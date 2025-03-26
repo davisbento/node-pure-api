@@ -71,6 +71,18 @@ npm install
 npm run dev
 ```
 
+### Testing
+
+This project uses a custom lightweight testing framework built with pure Node.js standard libraries (no external dependencies like Jest or Mocha). 
+
+To run tests:
+
+```bash
+pnpm test
+```
+
+For more details on the testing framework and how to write tests, see the [Testing Documentation](src/tests/README.md).
+
 ## API Endpoints 🔌
 
 ### Users
@@ -94,6 +106,10 @@ npm run dev
 │   ├── types/           # TypeScript types
 │   ├── services/        # Business logic
 │   ├── utils/           # Helper functions
+│   ├── tests/           # Test files and utilities
+│   │   ├── services/    # Service tests
+│   │   ├── utils/       # Utility tests
+│   │   └── README.md    # Testing documentation
 │   └── index.ts         # Entry point
 ├── docker-compose.yml   # Docker Compose configuration
 ├── Dockerfile           # Docker configuration
