@@ -11,6 +11,7 @@ const userService = new UserService();
 export async function handleSignup(req: IncomingMessage, res: ServerResponse): Promise<void> {
 	try {
 		const userData: SignupDto = await parseJsonBody<SignupDto>(req);
+
 		const result = await userService.signup(userData);
 
 		sendResponse(res, 201, result);

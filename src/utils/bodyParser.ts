@@ -1,4 +1,4 @@
-import { IncomingMessage } from 'http';
+import type { IncomingMessage } from 'node:http';
 
 /**
  * Parses the request body as JSON
