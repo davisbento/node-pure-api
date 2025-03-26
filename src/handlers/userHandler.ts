@@ -4,6 +4,7 @@ import type { LoginDto, SignupDto } from '../types/dto';
 import { validateUserTokenAndReturnUserId } from '../services/tokenService';
 import { UserService } from '../services/userService';
 import { parseJsonBody } from '../utils/bodyParser';
+import { sendResponse } from '../utils/server';
 
 const userService = new UserService();
 
@@ -12,16 +13,11 @@ export async function handleSignup(req: IncomingMessage, res: ServerResponse): P
 		const userData: SignupDto = await parseJsonBody<SignupDto>(req);
 		const result = await userService.signup(userData);
 
-		res.writeHead(201);
-		res.end(JSON.stringify(result));
+		sendResponse(res, 201, result);
 	} catch (error) {
-		res.writeHead(400);
-		res.end(
-			JSON.stringify({
-				success: false,
-				message: error instanceof Error ? error.message : 'Error processing request'
-			})
-		);
+		sendResponse(res, 400, {
+			message: error instanceof Error ? error.message : 'Error processing request'
+		});
 	}
 }
 
@@ -30,16 +26,11 @@ export async function handleLogin(req: IncomingMessage, res: ServerResponse): Pr
 		const credentials: LoginDto = await parseJsonBody<LoginDto>(req);
 		const result = await userService.login(credentials);
 
-		res.writeHead(200);
-		res.end(JSON.stringify(result));
+		sendResponse(res, 200, result);
 	} catch (error) {
-		res.writeHead(400);
-		res.end(
-			JSON.stringify({
-				success: false,
-				message: error instanceof Error ? error.message : 'Error processing request'
-			})
-		);
+		sendResponse(res, 400, {
+			message: error instanceof Error ? error.message : 'Error processing request'
+		});
 	}
 }
 
@@ -49,15 +40,8 @@ export async function handleGetMe(req: IncomingMessage, res: ServerResponse): Pr
 
 		const user = await userService.getCurrentUser(userId);
 
-		res.writeHead(200);
-		res.end(JSON.stringify(user));
+		sendResponse(res, 200, user);
 	} catch (error) {
-		res.writeHead(401);
-		res.end(
-			JSON.stringify({
-				success: false,
-				message: 'Unauthorized'
-			})
-		);
+		sendResponse(res, 401, { message: 'Unauthorized' });
 	}
 }
