@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { LoginDto, SignupDto } from '../types/dto';
 
+import { UnauthorizedException } from '../exceptions/unauthorizedException';
 import { validateUserTokenAndReturnUserId } from '../services/tokenService';
 import { UserService } from '../services/userService';
 import { parseJsonBody } from '../utils/bodyParser';
@@ -43,6 +44,10 @@ export async function handleGetMe(req: IncomingMessage, res: ServerResponse): Pr
 
 		sendResponse(res, 200, user);
 	} catch (error) {
-		sendResponse(res, 401, { message: 'Unauthorized' });
+		if (error instanceof UnauthorizedException) {
+			sendResponse(res, 401, { message: error.message });
+		} else {
+			sendResponse(res, 400, { message: 'Error processing request' });
+		}
 	}
 }
